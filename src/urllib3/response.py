@@ -214,6 +214,7 @@ class HTTPResponse(io.IOBase):
         request_method=None,
         request_url=None,
         auto_close=True,
+        content_lenth_cache=None
     ):
 
         if isinstance(headers, HTTPHeaderDict):
@@ -237,6 +238,7 @@ class HTTPResponse(io.IOBase):
         self.msg = msg
         self._request_url = request_url
 
+        self.content_lenth_cache = content_lenth_cache
         if body and isinstance(body, (six.string_types, bytes)):
             self._body = body
 
@@ -515,7 +517,10 @@ class HTTPResponse(io.IOBase):
         with self._error_catcher():
             if amt is None:
                 # cStringIO doesn't like amt=None
-                data = self._fp.read() if not fp_closed else b""
+                if self.content_lenth_cache and self.headers.get("content-length") in self.content_lenth_cache:
+                    data = b'{"hit": "cache"}'
+                else:
+                    data = self._fp.read() if not fp_closed else b""
                 flush_decoder = True
             else:
                 cache_content = False
